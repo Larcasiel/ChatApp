@@ -10,6 +10,8 @@ public class Server {
 	private static ServerSocket srvSocket;
 	private static final int PORT=3456;
 	
+	private static DatabaseInteraction db = null;
+	
 	private static void handleClient(){
 		Socket clientConnection = null;
 		
@@ -61,10 +63,14 @@ public class Server {
 	}
 	
 	public static void main(String[] args) {
-		 
+		db = new DatabaseInteraction();
+		
 		try {
 			System.out.println("Starting server on port " + PORT);
 			srvSocket = new ServerSocket(PORT);
+			
+			db.getAllMessages();
+			
 		} catch (IOException e) {
 			System.err.println("Problem creating server socket.");
 		}
