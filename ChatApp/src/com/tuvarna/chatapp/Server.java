@@ -69,7 +69,8 @@ public class Server {
 			System.out.println("Starting server on port " + PORT);
 			srvSocket = new ServerSocket(PORT);
 			
-			db.getAllMessages();
+			//db.getAllMessages();
+			db.getAllMessagesFromChat(1);
 			
 		} catch (IOException e) {
 			System.err.println("Problem creating server socket.");

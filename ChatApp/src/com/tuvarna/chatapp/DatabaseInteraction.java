@@ -5,9 +5,9 @@ import java.sql.*;
 import com.mysql.jdbc.Connection;
 
 public class DatabaseInteraction {
-	private String url = "jdbc:mysql://localhost:3306/chatappdb?autoReconnect=true&useSSL=false";
-	private String user = "chatapp";
-	private String password = "chatapppass";
+	private String url = Globals.DB_URL;
+	private String user = Globals.DB_USER;
+	private String password = Globals.DB_PASSWORD;
 	
 	private Connection conn = null;
 	
@@ -40,6 +40,46 @@ public class DatabaseInteraction {
 	    }
 	}
 	
+	public void getAllMessagesFromChat(int chatId){
+		connect();
+		
+		Statement stmt = null;
+		ResultSet resultSet = null;
+		
+		try{
+			stmt = conn.createStatement();
+			resultSet = stmt.executeQuery(Globals.GetAllMessagesFromChat(chatId));
+			
+			System.out.println("Messages from chat " + chatId + ":");
+			
+			while(resultSet.next()){
+				System.out.println("[" + resultSet.getString("MessageTime") + "] " + resultSet.getString("Username") + " says: " +
+								    resultSet.getString("Message"));
+			}
+		}
+		catch(SQLException e1){
+			e1.printStackTrace();
+		}
+		finally{
+			try{
+				if(stmt != null){
+					stmt.close();
+				}
+				
+				if(resultSet != null){
+					resultSet.close();
+				}
+				
+				if(conn != null){
+					conn.close();
+				}
+			}
+			catch(SQLException e2){
+				e2.printStackTrace();
+			}
+		}
+	}
+	
 	public void getAllMessages(){
 		connect();
 		
@@ -48,7 +88,7 @@ public class DatabaseInteraction {
 		
 		try{
 			stmt = conn.createStatement();
-			resultSet = stmt.executeQuery("SELECT Message FROM Messages");
+			resultSet = stmt.executeQuery(Globals.GET_ALL_MESASGES);
 			
 			while(resultSet.next()){
 				System.out.println("Message: " + resultSet.getString("Message"));
