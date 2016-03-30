@@ -1,6 +1,8 @@
-package com.tuvarna.chatapp;
+package com.tuvarna.chatapp.general;
 
 import java.sql.*;
+import java.util.Date;
+import java.text.*;
 
 import com.mysql.jdbc.Connection;
 
@@ -38,6 +40,38 @@ public class DatabaseInteraction {
 	    		System.out.println("Connected to the database.");
 	    	}
 	    }
+	}
+	
+	public void addNewMessage(int senderId, int chatId, String message) {
+		connect();
+		
+		Date dt = new Date();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		PreparedStatement preparedStmt;
+		
+		try {
+			preparedStmt = conn.prepareStatement(Globals.ADD_NEW_MESSAGE);
+			preparedStmt.setInt(1, senderId);
+			preparedStmt.setInt(2, chatId);
+			preparedStmt.setString(3, sdf.format(dt));
+			preparedStmt.setString(4, message);
+			
+			int rowsInserted = preparedStmt.executeUpdate();
+			
+			System.out.println(rowsInserted + " rows inserted.");
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+				
+		if (conn != null) {
+			try {
+				conn.close();
+			} catch (SQLException e) {
+
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public void getAllMessagesFromChat(int chatId){
