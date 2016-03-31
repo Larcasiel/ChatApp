@@ -1,6 +1,7 @@
 package com.tuvarna.chatapp.server;
 
 import java.net.*;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 //Informaciq za vurzanite klienti kum survura
 public class User {
@@ -11,7 +12,10 @@ public class User {
 	public Sender uSender=null;
 	
 	public User(){
-		username="a";
+		Random rand = new Random();
+		int n = rand.nextInt(999) + 1;
+		
+		username = "User" + n;
 		pass.getAndIncrement();
 	}
 

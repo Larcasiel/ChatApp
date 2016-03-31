@@ -11,6 +11,11 @@ public class Dispatcher extends Thread {
 	// Dobavq novi klienti kum lista na server-a
 	public synchronized void addUsers(User mUser) {
 		users.add(mUser);
+		
+		//Йоана: при добавяне на нов user, се уведомяват всички клиенти,
+		//за да могат да ъпдейтнат списъка си с онлайн user-и:
+		notifyClientsForUserChange();
+		notify();
 	}
 
 	// premahva daden klient v spisuka, ako toi e v nego
@@ -19,6 +24,11 @@ public class Dispatcher extends Thread {
 
 		if (userIndex != -1) {
 			users.removeElementAt(userIndex);
+			
+			//Йоана: при премахване на user, се уведомяват всички клиенти,
+			//за да могат да ъпдейтнат списъка си с онлайн user-и:
+			notifyClientsForUserChange();
+			notify();
 		}
 	}
 
@@ -68,6 +78,19 @@ public class Dispatcher extends Thread {
 		rUser.uSender.addMessage(message);
 	}
 
+	//Йоана: Всеки път, когато някой user се connect-не или disconnect-не към сървъра,
+	//се уведомяват всички клиенти.
+	public void notifyClientsForUserChange(){
+		String notificationMsg = "####%";
+		
+		for (int i = 0; i < users.size(); i++) {
+			User user = (User) users.get(i);
+			
+			notificationMsg += user.username + "%";
+		}
+		
+		messages.add(notificationMsg);
+	}
 	// cikul za chetene i izprashtane na suobshteniqta
 	// Йоана: Аналогично на Receiver.java - проемних името на метода от process() на run()
 	// public void process() {

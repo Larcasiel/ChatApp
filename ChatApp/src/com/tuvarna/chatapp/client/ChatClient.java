@@ -10,8 +10,8 @@ import java.net.Socket;
 public class ChatClient {
 	public static final int SERVER_PORT = 4321;
 
-	//Йоана: Неизползвана променлива:
-	//private static final String SERVER_HOSTNAME = "localhost";
+	// Йоана: Неизползвана променлива:
+	// private static final String SERVER_HOSTNAME = "localhost";
 
 	private Socket m_Socket = null;
 	private BufferedReader in = null;
@@ -20,7 +20,7 @@ public class ChatClient {
 	private GUI2 m_gui2;
 
 	// Йоана: Вече имаме Socket m_Socket, няма нужда от още един:
-	//private static Socket socket;
+	// private static Socket socket;
 
 	public ChatClient(GUI gui) {
 		this.m_gui = gui;
@@ -97,13 +97,13 @@ public class ChatClient {
 			m_Socket = new Socket(serverHost, SERVER_PORT);
 			in = new BufferedReader(new InputStreamReader(m_Socket.getInputStream()));
 			out = new PrintWriter(new OutputStreamWriter(m_Socket.getOutputStream()));
-			m_gui.addSystemMessage("Connected to server " + serverHost + ":" + SERVER_PORT);
+			m_gui.addSystemMessage("Connected to server " + serverHost + ": " + SERVER_PORT);
 		} catch (SecurityException se) {
 			m_gui.addSystemMessage(
-					"Security policy does not allow " + "connection to " + serverHost + ":" + SERVER_PORT);
+					"Security policy does not allow " + "connection to " + serverHost + ": " + SERVER_PORT);
 			successfull = false;
 		} catch (IOException e) {
-			m_gui.addSystemMessage("Can not establish connection to " + serverHost + ":" + SERVER_PORT);
+			m_gui.addSystemMessage("Can not establish connection to " + serverHost + ": " + SERVER_PORT);
 			successfull = false;
 		}
 
@@ -120,11 +120,21 @@ public class ChatClient {
 			m_gui.addSystemMessage("Can not disconnect. Not connected.");
 			return;
 		}
-		m_gui.setConnected(false);
+
+		// Йоана: По-добре е да се измести това под m_Socket.close():
+		// m_gui.setConnected(false);
+
 		try {
 			m_Socket.close();
+
+			// Йоана: Когато някой се разлогне, да не се запазва списъка с
+			// онлайн потребители:
+			m_gui.removeAllUsers();
+			m_gui.setConnected(false);
 		} catch (IOException ioe) {
+			ioe.printStackTrace();
 		}
+
 		m_gui.addSystemMessage("Disconnected.");
 	}
 
@@ -149,11 +159,26 @@ public class ChatClient {
 			try {
 				while (!isInterrupted()) {
 					String message = mIn.readLine();
-					//Йоана: Смених ":" на "-".
-					int colon2index = message.indexOf("-", message.indexOf("-") + 1);
-					String user = message.substring(0, colon2index - 1);
-					mCA.addText(message, user);
-					mCA.addUser(user);
+
+					// Йоана: добавям функционалност, която да приема съобщение
+					// от сървъра за обновяване на списъка с клиенти:
+					if (message.startsWith("####")) {
+						message = message.substring(5);
+
+						String[] users = message.split("%");
+
+						mCA.removeAllUsers();
+
+						for (int i = 0; i < users.length; i++) {
+							mCA.addUser(users[i]);
+						}
+					} else {
+						// Йоана: Смених ":" на "-".
+						int colon2index = message.indexOf("-", message.indexOf("-") + 1);
+						String user = message.substring(0, colon2index - 1);
+						mCA.addText(message, user);
+						// mCA.addUser(user);
+					}
 				}
 			} catch (Exception ioe) {
 				if (m_gui.getConnected())

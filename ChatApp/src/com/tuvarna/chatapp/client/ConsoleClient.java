@@ -12,6 +12,7 @@ public class ConsoleClient {
 	public static void main(String[] args) {
 		// Connect to the chat server
 		try {
+			@SuppressWarnings("resource")
 			Socket socket = new Socket("localhost", PORT);
 			mSocketReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			mSocketWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));

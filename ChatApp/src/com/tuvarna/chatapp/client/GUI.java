@@ -180,6 +180,12 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 			userList.add(anUser);
 		}
 	}
+	
+	//Йоана: Добавих метод за изтриване на всички users в списъка:
+	public synchronized void removeAllUsers() {		
+		allUsers.removeAllElements();
+		userList.removeAll();
+	}
 
 	/**
 	 * Method is called from ChatClient to append given message to the
