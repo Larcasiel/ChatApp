@@ -25,15 +25,14 @@ public class Sender extends Thread {
 	}
 
 	public synchronized String nextMessage() throws InterruptedException {
-		while (messages.size() == 0)
-		{
+		while (messages.size() == 0) {
 			wait();
 		}
-		
+
 		String message = (String) messages.get(0);
-		
+
 		messages.removeElementAt(0);
-		
+
 		return message;
 	}
 
@@ -42,8 +41,9 @@ public class Sender extends Thread {
 		writer.flush();
 	}
 
-	// Йоана: Аналогично на Receiver.java - проемних името на метода от process() на run()
-	//public void process() {
+	// Йоана: Аналогично на Receiver.java - проемних името на метода от
+	// process() на run()
+	// public void process() {
 	public void run() {
 		try {
 			while (!isInterrupted()) {
@@ -53,7 +53,7 @@ public class Sender extends Thread {
 		} catch (Exception e) {
 			System.out.println("Connection false, please reconnect");
 		}
-		
+
 		user.uReceiver.interrupt();
 		dispatcher.deleteUsers(user);
 	}

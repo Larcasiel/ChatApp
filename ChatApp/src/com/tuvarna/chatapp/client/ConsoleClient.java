@@ -3,7 +3,7 @@ package com.tuvarna.chatapp.client;
 import java.io.*;
 import java.net.*;
 
-public class Client {
+public class ConsoleClient {
 	private static final int PORT = 4321;
 
 	private static BufferedReader mSocketReader;

@@ -7,11 +7,11 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class ChatClient
-{
-	public static final int SERVER_PORT = 3456;
+public class ChatClient {
+	public static final int SERVER_PORT = 4321;
 
-	private static final String SERVER_HOSTNAME = null;
+	//Йоана: Неизползвана променлива:
+	//private static final String SERVER_HOSTNAME = "localhost";
 
 	private Socket m_Socket = null;
 	private BufferedReader in = null;
@@ -19,81 +19,91 @@ public class ChatClient
 	private GUI m_gui;
 	private GUI2 m_gui2;
 
-	private static Socket socket;
+	// Йоана: Вече имаме Socket m_Socket, няма нужда от още един:
+	//private static Socket socket;
 
-	
-
-	public ChatClient (GUI gui) {
+	public ChatClient(GUI gui) {
 		this.m_gui = gui;
 	}
+
 	public ChatClient(GUI2 gui2) {
 		this.setM_gui2(gui2);
 	}
 
-	public PrintWriter getOutput () {
+	public PrintWriter getOutput() {
 		return out;
 	}
-	
-	 public static void main(String[] args, BufferedReader mSocketReader, PrintWriter mSocketWriter) { 
 
-	        // Connect to the chat server 
+	// Йоана: Всъщност, явно не ни трябва main за клиента. Връзването към
+	// сървъра става в connect().
 
-	        try { 
+	// public static void main(String[] args, BufferedReader mSocketReader,
+	// PrintWriter mSocketWriter) {
+	//
+	// // Connect to the chat server
+	//
+	// try {
+	//
+	// socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+	// mSocketReader = new BufferedReader(new
+	//
+	// InputStreamReader(socket.getInputStream()));
+	//
+	// mSocketWriter = new PrintWriter(new
+	//
+	// OutputStreamWriter(socket.getOutputStream()));
+	//
+	// System.out.println("Connected to server " +
+	//
+	// SERVER_HOSTNAME + ":" + SERVER_PORT);
+	//
+	// } catch (IOException ioe) {
+	//
+	// System.err.println("Can not connect to " +
+	//
+	// SERVER_HOSTNAME + ":" + SERVER_PORT);
+	//
+	// ioe.printStackTrace();
+	//
+	// System.exit(-1);
+	// }
+	// }
 
-	            socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
-				mSocketReader = new BufferedReader(new 
-
-	                InputStreamReader(socket.getInputStream())); 
-
-	            mSocketWriter = new PrintWriter(new 
-
-	                OutputStreamWriter(socket.getOutputStream())); 
-
-	            System.out.println("Connected to server " + 
-
-	                    SERVER_HOSTNAME + ":" + SERVER_PORT); 
-
-	        } catch (IOException ioe) { 
-
-	            System.err.println("Can not connect to " + 
-
-	                SERVER_HOSTNAME + ":" + SERVER_PORT); 
-
-	            ioe.printStackTrace(); 
-
-	            System.exit(-1);}; 
-
-	        } 
-	
-	public BufferedReader getInput () {
+	public BufferedReader getInput() {
 		return in;
 	}
 
-
-	public boolean connect () {
+	public boolean connect() {
 		boolean successfull = true;
-		String serverHost = (m_gui.getCodeBase()).getHost();
-		if (serverHost.length()==0) {
-			m_gui.addSystemMessage("Warning: Applet is loaded from a local file,");
-			m_gui.addSystemMessage("not from a web server. Web browser's security");
-			m_gui.addSystemMessage("policy will probably disable socket connections.");
-			serverHost = "localhost";
-		}
+
+		// Йоана: Ще тестваме локално, затова направо set-ваме serverHost на
+		// "localhost":
+		String serverHost = "localhost"; // (m_gui.getCodeBase()).getHost();
+
+		// Йоана: Тук виждам разни съобщения, свързани с аплети. Тъй като няма
+		// да ползваме аплети,
+		// ще закоментирам долните редове:
+		// if (serverHost.length() == 0) {
+		// m_gui.addSystemMessage("Warning: Applet is loaded from a local
+		// file,");
+		// m_gui.addSystemMessage("not from a web server. Web browser's
+		// security");
+		// m_gui.addSystemMessage("policy will probably disable socket
+		// connections.");
+		// serverHost = "localhost";
+		// }
+
 		try {
 			m_Socket = new Socket(serverHost, SERVER_PORT);
-			in = new BufferedReader(
-				new InputStreamReader(m_Socket.getInputStream()));
-			out = new PrintWriter(
-				new OutputStreamWriter(m_Socket.getOutputStream()));
-			m_gui.addSystemMessage("Connected to server " +
-			   serverHost + ":" + SERVER_PORT);
+			in = new BufferedReader(new InputStreamReader(m_Socket.getInputStream()));
+			out = new PrintWriter(new OutputStreamWriter(m_Socket.getOutputStream()));
+			m_gui.addSystemMessage("Connected to server " + serverHost + ":" + SERVER_PORT);
 		} catch (SecurityException se) {
-			m_gui.addSystemMessage("Security policy does not allow " +
-				"connection to " + serverHost + ":" + SERVER_PORT);
+			m_gui.addSystemMessage(
+					"Security policy does not allow " + "connection to " + serverHost + ":" + SERVER_PORT);
 			successfull = false;
 		} catch (IOException e) {
-			m_gui.addSystemMessage("Can not establish connection to " +
-				serverHost + ":" + SERVER_PORT);
+			m_gui.addSystemMessage("Can not establish connection to " + serverHost + ":" + SERVER_PORT);
 			successfull = false;
 		}
 
@@ -118,33 +128,32 @@ public class ChatClient
 		m_gui.addSystemMessage("Disconnected.");
 	}
 
-
 	public GUI2 getM_gui2() {
 		return m_gui2;
 	}
+
 	public void setM_gui2(GUI2 m_gui2) {
 		this.m_gui2 = m_gui2;
 	}
 
-
-	class Listener extends Thread
-	{
+	class Listener extends Thread {
 		private BufferedReader mIn;
 		private GUI mCA;
 
-		public Listener (GUI m_gui, BufferedReader aIn) {
+		public Listener(GUI m_gui, BufferedReader aIn) {
 			mCA = m_gui;
-			mIn  = aIn;
+			mIn = aIn;
 		}
 
 		public void run() {
 			try {
 				while (!isInterrupted()) {
 					String message = mIn.readLine();
-					int colon2index = message.indexOf(":",message.indexOf(":")+1);
-					String user = message.substring(0, colon2index-1);
-					mCA.addText (message, user);
-					mCA.addUser (user);
+					//Йоана: Смених ":" на "-".
+					int colon2index = message.indexOf("-", message.indexOf("-") + 1);
+					String user = message.substring(0, colon2index - 1);
+					mCA.addText(message, user);
+					mCA.addUser(user);
 				}
 			} catch (Exception ioe) {
 				if (m_gui.getConnected())
@@ -152,6 +161,6 @@ public class ChatClient
 			}
 			m_gui.setConnected(false);
 		}
-		
+
 	}
 }

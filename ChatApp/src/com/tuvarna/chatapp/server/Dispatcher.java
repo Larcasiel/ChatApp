@@ -70,7 +70,7 @@ public class Dispatcher extends Thread {
 
 	// cikul za chetene i izprashtane na suobshteniqta
 	// Йоана: Аналогично на Receiver.java - проемних името на метода от process() на run()
-	//public void process() {
+	// public void process() {
 	public void run() {
 		try {
 			while (true) {
