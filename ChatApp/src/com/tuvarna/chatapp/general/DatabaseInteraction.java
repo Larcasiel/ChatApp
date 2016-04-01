@@ -42,6 +42,53 @@ public class DatabaseInteraction {
 	    }
 	}
 	
+	public boolean logIn(String username, String password) {
+		boolean result = false;
+		
+		connect();
+		
+		Statement stmt = null;
+		ResultSet resultSet = null;
+		
+		try{
+			stmt = conn.createStatement();
+			resultSet = stmt.executeQuery(Globals.logIn(username, password));
+			
+			int count = 0;
+			
+			while(resultSet.next()){
+				count = resultSet.getInt(1);
+			}
+			
+			if(count > 0) {
+				result = true;
+			}
+		}
+		catch(SQLException e1){
+			e1.printStackTrace();
+		}
+		finally{
+			try{
+				if(stmt != null){
+					stmt.close();
+				}
+				
+				if(resultSet != null){
+					resultSet.close();
+				}
+				
+				if(conn != null){
+					conn.close();
+				}
+			}
+			catch(SQLException e2){
+				e2.printStackTrace();
+			}
+		}
+		
+		return result;
+	}
+	
 	public void addNewMessage(int senderId, int chatId, String message) {
 		connect();
 		
@@ -82,7 +129,7 @@ public class DatabaseInteraction {
 		
 		try{
 			stmt = conn.createStatement();
-			resultSet = stmt.executeQuery(Globals.GetAllMessagesFromChat(chatId));
+			resultSet = stmt.executeQuery(Globals.getAllMessagesFromChat(chatId));
 			
 			System.out.println("Messages from chat " + chatId + ":");
 			

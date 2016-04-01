@@ -87,7 +87,7 @@ public class LoginDialog extends JDialog {
 		btnLogin.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				switch (logIn(txtFieldUsername.getText(), fieldPassword.getPassword().toString())) {
+				switch (logIn(txtFieldUsername.getText(), new String(fieldPassword.getPassword()))) {
 					case CONNECTED:
 						parent.setVisible(true);
 						setVisible(false);

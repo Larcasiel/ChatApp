@@ -3,6 +3,8 @@ package com.tuvarna.chatapp.server;
 import java.net.*;
 import java.io.*;
 
+import com.tuvarna.chatapp.general.*;
+
 //Slusha porta i priema novi klienti
 public class Server {
 	// Йоана: Смених порта от 8080 на 4321:
@@ -53,6 +55,8 @@ public class Server {
 		connect();
 
 		dispatcher = new Dispatcher();
+		//Йоана: Връзка между базата и диспечера:
+		dispatcher.setDb(new DatabaseInteraction());
 		dispatcher.start();
 
 		manageConnection();

@@ -163,7 +163,7 @@ public class ChatClient {
 
 	// Йоана: Добавям метод за проверка на username и парола:
 	private boolean logIn(String username, String password) {
-		boolean result = true;
+		boolean result = false;
 
 		HashMap<String, String> operationMsg = new HashMap<String, String>();
 

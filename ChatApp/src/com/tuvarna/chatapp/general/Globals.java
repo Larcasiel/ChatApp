@@ -10,8 +10,12 @@ public class Globals {
 	public static final String GET_ALL_MESASGES = "SELECT Message FROM ChatMessage;";
 	public static final String ADD_NEW_MESSAGE = "INSERT INTO ChatMessage(SenderId, ChatId, MessageTime, Message) VALUES(?, ?, ?, ?);";
 	
-	public static String GetAllMessagesFromChat(int chatId){
+	public static String getAllMessagesFromChat(int chatId){
 		return "SELECT a.MessageTime, a.Message, b.Username FROM ChatMessage AS a, ChatUser AS b " +
 		 "WHERE a.ChatId = " + chatId + " AND a.SenderId = b.Id;";
+	}
+	
+	public static String logIn(String username, String password){
+		return "SELECT COUNT(*) FROM ChatUser WHERE username = \'" + username + "\' AND password = \'" + password + "\';";
 	}
 }
