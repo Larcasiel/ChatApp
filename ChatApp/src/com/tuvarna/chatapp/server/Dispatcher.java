@@ -1,7 +1,9 @@
 package com.tuvarna.chatapp.server;
 
 import java.util.*;
-import java.net.*;
+import java.text.SimpleDateFormat;
+
+import flexjson.*;
 
 //Funkciqta na klasa e da slusha za suobshteniq polucheni ot daden klient i da gi razprashta do ostanalite svurzani klienti 
 public class Dispatcher extends Thread {
@@ -11,9 +13,9 @@ public class Dispatcher extends Thread {
 	// Dobavq novi klienti kum lista na server-a
 	public synchronized void addUsers(User mUser) {
 		users.add(mUser);
-		
-		//Йоана: при добавяне на нов user, се уведомяват всички клиенти,
-		//за да могат да ъпдейтнат списъка си с онлайн user-и:
+
+		// Йоана: при добавяне на нов user, се уведомяват всички клиенти,
+		// за да могат да ъпдейтнат списъка си с онлайн user-и:
 		notifyClientsForUserChange();
 		notify();
 	}
@@ -24,9 +26,9 @@ public class Dispatcher extends Thread {
 
 		if (userIndex != -1) {
 			users.removeElementAt(userIndex);
-			
-			//Йоана: при премахване на user, се уведомяват всички клиенти,
-			//за да могат да ъпдейтнат списъка си с онлайн user-и:
+
+			// Йоана: при премахване на user, се уведомяват всички клиенти,
+			// за да могат да ъпдейтнат списъка си с онлайн user-и:
 			notifyClientsForUserChange();
 			notify();
 		}
@@ -37,13 +39,32 @@ public class Dispatcher extends Thread {
 		return users;
 	}
 
+	// Йоана: Ще опаковаме всички съобщения от сървъра в JSON, правя промени във
+	// връзка с това:
 	// dobavq dadadeno suobshtenie i uvedomqva nextMessage() che ima suobhstenie
 	public synchronized void addMessage(User mUser, String message) {
-		Socket s = mUser.uSocket;
-		String sIP = s.getInetAddress().getHostAddress();
-		String sPort = "" + s.getPort();
+		// Socket s = mUser.uSocket;
+		// String sIP = s.getInetAddress().getHostAddress();
+		// String sPort = "" + s.getPort();
 
-		message = sIP + "-" + sPort + "-" + message;
+		// message = sIP + "-" + sPort + "-" + message;
+
+		// Йоана: Структура на съобщението в JSON формат:
+//		HashMap<String, String> operationMsg = new HashMap<String, String>();
+//
+//		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyy HH:mm:ss");
+//
+//		Date now = new Date();
+//		String date = sdf.format(now);
+//
+//		operationMsg.put("operation", "receiveMessage");
+//		operationMsg.put("message", message);
+//		operationMsg.put("sender", mUser.username);
+//		operationMsg.put("time", date);
+//
+//		JSONSerializer serializer = new JSONSerializer();
+//
+//		messages.add(serializer.serialize(operationMsg).toString());
 
 		messages.add(message);
 
@@ -78,30 +99,87 @@ public class Dispatcher extends Thread {
 		rUser.uSender.addMessage(message);
 	}
 
-	//Йоана: Всеки път, когато някой user се connect-не или disconnect-не към сървъра,
-	//се уведомяват всички клиенти.
-	public void notifyClientsForUserChange(){
-		String notificationMsg = "####%";
-		
+	// Йоана: Всеки път, когато някой user се connect-не или disconnect-не към
+	// сървъра,
+	// се уведомяват всички клиенти.
+	public void notifyClientsForUserChange() {
+		HashMap<String, String> operationMsg = new HashMap<String, String>();
+
+		String userList = "";
+
 		for (int i = 0; i < users.size(); i++) {
 			User user = (User) users.get(i);
-			
-			notificationMsg += user.username + "%";
+
+			userList += user.username + "%";
 		}
-		
-		messages.add(notificationMsg);
+
+		operationMsg.put("operation", "onlineUsersResponse");
+		operationMsg.put("users", userList);
+
+		JSONSerializer serializer = new JSONSerializer();
+
+		messages.add(serializer.serialize(operationMsg).toString());
 	}
+
 	// cikul za chetene i izprashtane na suobshteniqta
-	// Йоана: Аналогично на Receiver.java - проемних името на метода от process() на run()
+	// Йоана: Аналогично на Receiver.java - проемних името на метода от
+	// process() на run()
 	// public void process() {
 	public void run() {
 		try {
 			while (true) {
 				String message = nextMessage();
-				sendToAll(message);
+
+				// Йоана: В нов метод (handleMessage) добавям малко повече
+				// логика относно съобщенията, които получава сървъра.
+				//sendToAll(message);
+				handleMessage(message);
 			}
 		} catch (InterruptedException e) {
 			System.out.println("Thread interrupted");
+		}
+	}
+	
+	//Йоана: Разширена логика за приемане на съобщения:
+	private void handleMessage(String message) {
+		HashMap<String, String> parsedMessage = new JSONDeserializer<HashMap<String, String>>()
+				.deserialize(message);
+
+		String operation = parsedMessage.get("operation");
+
+		if (operation.equals("logInRequest")) {
+			String username = parsedMessage.get("username");
+			String password = parsedMessage.get("password");
+			
+			String ipAddress = parsedMessage.get("ipAddress");
+			String port = parsedMessage.get("port");
+			
+			HashMap<String, String> loginOperationMsg = new HashMap<String, String>();
+
+			loginOperationMsg.put("operation", "logInResponse");
+			loginOperationMsg.put("success", "true");
+
+			JSONSerializer serializer = new JSONSerializer();
+
+			addMessage(null, serializer.serialize(loginOperationMsg).toString());
+			
+			for (int i = 0; i < users.size(); i++) {
+				User user = (User) users.get(i);
+				
+				String currentIP = user.uSocket.getInetAddress().toString();
+				currentIP = "localhost" + currentIP;
+				String currentPort = "" + user.uSocket.getPort();
+				
+				if(currentIP.equals(ipAddress)
+						&& (currentPort.equals(port))) {
+					user.username = username;
+				}
+			}
+		} else if(operation.equals("onlineUsersRequest")){
+			notifyClientsForUserChange();
+		}
+		else { //if (operation.equals("sendMessage")) {
+			sendToAll(message);
 		}
 	}
 }

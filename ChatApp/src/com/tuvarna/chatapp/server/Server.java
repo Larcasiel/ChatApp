@@ -30,6 +30,8 @@ public class Server {
 
 				User user = new User();
 				user.uSocket = s;
+				
+				System.out.println(s.toString());
 
 				Receiver receiver = new Receiver(user, dispatcher);
 				Sender sender = new Sender(user, dispatcher);

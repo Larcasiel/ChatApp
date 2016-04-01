@@ -1,8 +1,12 @@
-package com.tuvarna.chatapp.client;
+package com.tuvarna.chatapp.gui;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import com.tuvarna.chatapp.client.ChatClient;
+
+import flexjson.JSONSerializer;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
@@ -16,6 +20,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Vector;
 
 //Йоана: Класът вече наследява JFrame, не JApplet.
@@ -41,7 +48,8 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 	// Йоана: Не сме говорили за deniedUsers, засаега се коментира:
 	// private Vector<String> deniedUsers = new Vector<String>();
 
-	private boolean isConnected = false;
+	//Йоана: Промених името на флага от isConnected на isLoggedIn:
+	private boolean isLoggedIn = false;
 	private Button connectButton = new Button();
 	private Button disconnectButton = new Button();
 	private Button exitButton = new Button();
@@ -68,7 +76,7 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 		setTitle("ChatApp");
 		// Йоана: Добавих нов JPanel - contentPlane.
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 474, 319);
+		setBounds(100, 100, 474, 322);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(null);
@@ -140,12 +148,12 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 		this.setBackground(Color.gray);
 	}
 
-	public void setConnected(boolean aConnected) {
-		isConnected = aConnected;
+	public void setLoggedIn(boolean loggedIn) {
+		isLoggedIn = loggedIn;
 	}
 
-	public boolean getConnected() {
-		return isConnected;
+	public boolean getLoggedIn() {
+		return isLoggedIn;
 	}
 
 	/**
@@ -180,9 +188,9 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 			userList.add(anUser);
 		}
 	}
-	
-	//Йоана: Добавих метод за изтриване на всички users в списъка:
-	public synchronized void removeAllUsers() {		
+
+	// Йоана: Добавих метод за изтриване на всички users в списъка:
+	public synchronized void removeAllUsers() {
 		allUsers.removeAllElements();
 		userList.removeAll();
 	}
@@ -238,7 +246,22 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 	 * @param aMessage
 	 */
 	public void sendMessage(String aMessage) {
-		cl.getOutput().println(aMessage);
+		
+		HashMap<String, String> operationMsg = new HashMap<String, String>();
+
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyy HH:mm:ss");
+
+		Date now = new Date();
+		String date = sdf.format(now);
+
+		operationMsg.put("operation", "receiveMessage");
+		operationMsg.put("message", aMessage);
+		operationMsg.put("sender", cl.getUsername());
+		operationMsg.put("time", date);
+
+		JSONSerializer serializer = new JSONSerializer();
+		
+		cl.getOutput().println(serializer.serialize(operationMsg).toString());
 		cl.getOutput().flush();
 	}
 
@@ -260,11 +283,15 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 		if (ae.getSource().equals(connectButton)) { // catch ActionEvents coming
 													// connect button from
 													// textField1
-			if (!isConnected) {
-				addSystemMessage("Connecting...");
-				isConnected = cl.connect();
+			// Йоана: Добавям допълнителна логика за логване зад Login бутона:
+			if (!isLoggedIn) {
+				//addSystemMessage("Connecting...");
+				//isLoggedIn = cl.connect();
+
+				LoginDialog loginDialog = new LoginDialog(this, true, cl);
+				loginDialog.setVisible(true);
 			} else {
-				addSystemMessage("Already connected.");
+				addSystemMessage("Already logged in.");
 			}
 		}
 
@@ -298,7 +325,7 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 	}
 
 	private void sendButtonPressed() {
-		if (!isConnected) {
+		if (!isLoggedIn) {
 			chatTextArea.append("Please connect first.\n");
 			return;
 		}

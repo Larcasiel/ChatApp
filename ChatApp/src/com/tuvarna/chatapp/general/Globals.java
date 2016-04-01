@@ -1,6 +1,8 @@
 package com.tuvarna.chatapp.general;
 
 public class Globals {
+	public static enum CONNECTION_STATUS { CONNECTED, SECURITY_ERROR, SERVER_DOWN, INVALID_USER_OR_PASS }
+	
 	public static final String DB_URL = "jdbc:mysql://localhost:3306/chatappdb?autoReconnect=true&useSSL=false";
 	public static final String DB_USER = "chatapp";
 	public static final String DB_PASSWORD = "chatapppass";

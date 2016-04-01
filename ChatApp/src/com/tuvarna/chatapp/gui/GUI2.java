@@ -1,7 +1,10 @@
-package com.tuvarna.chatapp.client;
+package com.tuvarna.chatapp.gui;
 
 import javax.swing.JApplet;
-	import java.awt.Button;
+
+import com.tuvarna.chatapp.client.ChatClient;
+
+import java.awt.Button;
 	import java.awt.Color;
 	import java.awt.MenuItem;
 	import java.awt.PopupMenu;
