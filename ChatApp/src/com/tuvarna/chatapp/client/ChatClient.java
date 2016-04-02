@@ -8,7 +8,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
 
-import com.tuvarna.chatapp.general.Globals.*;
+import javax.swing.JLabel;
+
 import com.tuvarna.chatapp.gui.GUI;
 import com.tuvarna.chatapp.gui.GUI2;
 
@@ -23,11 +24,14 @@ public class ChatClient {
 	private PrintWriter out = null;
 	private GUI m_gui;
 	private GUI2 m_gui2;
+	
+	//Йоана: Label на LoginDialog:
+	private JLabel lblLoginStatus;
 
 	// Йоана: Вече имаме Socket m_Socket, няма нужда от още един:
 	// private static Socket socket;
 
-	// Йоана: Добавям нов флаг: isLoggedIn
+	// Йоана: Добавям нов флаг: isLoggedIn, както и String username:
 	private boolean isLoggedIn = false;
 	private String username = "";
 
@@ -82,9 +86,8 @@ public class ChatClient {
 		return in;
 	}
 
-	// Йоана: Сменям типа на връщания резултат на CONNECTION_STATUS:
-	public CONNECTION_STATUS connect(String username, String password) {
-		CONNECTION_STATUS result = CONNECTION_STATUS.CONNECTED;
+	public boolean connect(String username, String password) {
+		boolean result = false;
 
 		// Йоана: Ще използваме SERVER_HOSTNAME вместо тази променлива:
 		//String serverHost = (m_gui.getCodeBase()).getHost();
@@ -115,18 +118,24 @@ public class ChatClient {
 				this.username = username;
 				
 				requestOnlineUsers();
+				
+				result = true;
 			} else {
-				result = CONNECTION_STATUS.INVALID_USER_OR_PASS;
+				result = false;
 			}
 		} catch (SecurityException se) {
 			m_gui.addSystemMessage(
 					"Security policy does not allow " + "connection to " + SERVER_HOSTNAME + ": " + SERVER_PORT);
-			result = CONNECTION_STATUS.SECURITY_ERROR;
+			result = false;
+			
+			lblLoginStatus.setText("Security error.");
 		} catch (IOException e) {
 			// Йоана: Долната информация ще се появява в Login прозореца:
 			// m_gui.addSystemMessage("Can not establish connection to " +
 			// serverHost + ": " + SERVER_PORT);
-			result = CONNECTION_STATUS.SERVER_DOWN;
+			result = false;
+			
+			lblLoginStatus.setText("Server is down. Try again later.");
 		}
 
 		// Create and start Listener thread
@@ -147,6 +156,19 @@ public class ChatClient {
 		// m_gui.setConnected(false);
 
 		try {
+			//Йоана: logout logic
+			
+			HashMap<String, String> operationMsg = new HashMap<String, String>();
+
+			operationMsg.put("operation", "logOutRequest");
+			operationMsg.put("username", username);
+			operationMsg.put("ipAddress", m_Socket.getInetAddress().toString());
+
+			JSONSerializer serializer = new JSONSerializer();
+			
+			out.println(serializer.serialize(operationMsg).toString());
+			out.flush();
+			
 			m_Socket.close();
 
 			// Йоана: Когато някой се разлогне, да не се запазва списъка с
@@ -179,8 +201,6 @@ public class ChatClient {
 		out.flush();
 		
 		String message = "";
-		
-		System.out.println(m_Socket.toString());
 
 		try {
 			while (true) {
@@ -194,6 +214,8 @@ public class ChatClient {
 				if (operation.equals("logInResponse")) {
 					if (parsedMessage.get("success").equals("true")) {
 						result = true;
+					} else {
+						lblLoginStatus.setText(parsedMessage.get("statusMessage"));
 					}
 
 					break;
@@ -224,6 +246,14 @@ public class ChatClient {
 
 	public void setM_gui2(GUI2 m_gui2) {
 		this.m_gui2 = m_gui2;
+	}
+	
+	public JLabel getLblLoginStatus() {
+		return lblLoginStatus;
+	}
+	
+	public void setLblLoginStatus(JLabel lblLoginStatus) {
+		this.lblLoginStatus = lblLoginStatus;
 	}
 
 	public String getUsername() {

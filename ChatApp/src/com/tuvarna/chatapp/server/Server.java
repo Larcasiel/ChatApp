@@ -29,6 +29,7 @@ public class Server {
 		while (true) {
 			try {
 				Socket s = socket.accept();
+				s.setSoTimeout(20000);
 
 				User user = new User();
 				user.uSocket = s;

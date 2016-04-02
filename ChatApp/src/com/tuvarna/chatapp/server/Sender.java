@@ -4,6 +4,8 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
+import flexjson.JSONSerializer;
+
 //Izprashta supbshteniqta do usera,chakashtite suobshteniq se suhranqvat v opashkata
 //Kogato tq e prazna toi zaspiva,kogato e budna izprashta suobshteniqta do nishkata na klienta
 public class Sender extends Thread {
@@ -56,6 +58,17 @@ public class Sender extends Thread {
 
 		user.uReceiver.interrupt();
 		dispatcher.deleteUsers(user);
+	}
+	
+	//Йоана: Трябва да добавим keep-alive логика като в сървъра на Наков:
+	public void sendKeepAlive() {
+		HashMap<String, String> operationMsg = new HashMap<String, String>();
+		
+		operationMsg.put("operation", "keepAlive");
+
+		JSONSerializer serializer = new JSONSerializer();
+
+		addMessage(serializer.serialize(operationMsg).toString());
 	}
 
 }

@@ -1,5 +1,6 @@
 package com.tuvarna.chatapp.server;
 
+import java.io.IOException;
 import java.util.*;
 
 import com.tuvarna.chatapp.general.*;
@@ -29,6 +30,9 @@ public class Dispatcher extends Thread {
 		int userIndex = users.indexOf(mUser);
 
 		if (userIndex != -1) {
+			if (mUser.username != null) {
+				db.updateUserStatus(mUser.username, "localhost" + mUser.uSocket.getInetAddress(), 0);
+			}
 			users.removeElementAt(userIndex);
 
 			// Йоана: при премахване на user, се уведомяват всички клиенти,
@@ -111,10 +115,14 @@ public class Dispatcher extends Thread {
 
 		String userList = "";
 
+		System.out.println("Users: " + users.size());
+
 		for (int i = 0; i < users.size(); i++) {
 			User user = (User) users.get(i);
 
-			userList += user.username + "%";
+			if (user.username != null) {
+				userList += user.username + "%";
+			}
 		}
 
 		operationMsg.put("operation", "onlineUsersResponse");
@@ -156,17 +164,51 @@ public class Dispatcher extends Thread {
 
 			String ipAddress = parsedMessage.get("ipAddress");
 			String port = parsedMessage.get("port");
-			
+
 			HashMap<String, String> loginOperationMsg = new HashMap<String, String>();
-			
+
 			loginOperationMsg.put("operation", "logInResponse");
 
-			if (db.logIn(username, password)) {				
+			switch (db.logIn(username, password, ipAddress)) {
+			case ALREADY_LOGGED:
+				loginOperationMsg.put("success", "false");
+				loginOperationMsg.put("statusMessage", "Already logged in from this computer.");
+
+				break;
+			case DB_PROBLEMS:
+				loginOperationMsg.put("success", "false");
+				loginOperationMsg.put("statusMessage", "DB problems, try again later.");
+				break;
+			case INVALID_USER_OR_PASS:
+				loginOperationMsg.put("success", "false");
+				loginOperationMsg.put("statusMessage", "Invalid username or password.");
+
+				for (int i = 0; i < users.size(); i++) {
+					User user = (User) users.get(i);
+
+					String currentIP = user.uSocket.getInetAddress().toString();
+					currentIP = "localhost" + currentIP;
+					String currentPort = "" + user.uSocket.getPort();
+
+					if (currentIP.equals(ipAddress) && (currentPort.equals(port))) {
+						(new Thread() {
+							public void run() {
+								try {
+									Thread.sleep(1000);
+								} catch (InterruptedException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+
+								users.remove(user);
+							}
+						}).start();
+					}
+				}
+				break;
+			case SUCCESS:
 				loginOperationMsg.put("success", "true");
-
-				JSONSerializer serializer = new JSONSerializer();
-
-				addMessage(null, serializer.serialize(loginOperationMsg).toString());
+				loginOperationMsg.put("statusMessage", "Success");
 
 				for (int i = 0; i < users.size(); i++) {
 					User user = (User) users.get(i);
@@ -179,13 +221,22 @@ public class Dispatcher extends Thread {
 						user.username = username;
 					}
 				}
-			} else {
-				loginOperationMsg.put("success", "false");
-				
-				JSONSerializer serializer = new JSONSerializer();
 
-				addMessage(null, serializer.serialize(loginOperationMsg).toString());
+				break;
+			default:
+				loginOperationMsg.put("success", "false");
+				loginOperationMsg.put("statusMessage", "Unknown error.");
+				break;
 			}
+
+			JSONSerializer serializer = new JSONSerializer();
+
+			addMessage(null, serializer.serialize(loginOperationMsg).toString());
+		} else if (operation.equals("logOutRequest")) {
+			String username = parsedMessage.get("username");
+			String ipAddress = parsedMessage.get("ipAddress");
+
+			db.updateUserStatus(username, ipAddress, 0);
 		} else if (operation.equals("onlineUsersRequest")) {
 			notifyClientsForUserChange();
 		} else { // if (operation.equals("sendMessage")) {

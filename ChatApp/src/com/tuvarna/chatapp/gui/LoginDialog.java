@@ -6,7 +6,6 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import com.tuvarna.chatapp.client.ChatClient;
-import com.tuvarna.chatapp.general.Globals.*;
 
 public class LoginDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
@@ -87,23 +86,10 @@ public class LoginDialog extends JDialog {
 		btnLogin.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				switch (logIn(txtFieldUsername.getText(), new String(fieldPassword.getPassword()))) {
-					case CONNECTED:
+				if (logIn(txtFieldUsername.getText(), new String(fieldPassword.getPassword()))) {
 						parent.setVisible(true);
 						setVisible(false);
 						dispose();
-						break;
-					case INVALID_USER_OR_PASS:
-						lblStatus.setText("Invalid username or password.");
-						break;
-					case SECURITY_ERROR:
-						lblStatus.setText("Security error.");
-						break;
-					case SERVER_DOWN:
-						lblStatus.setText("Server is down. Try again later.");
-						break;
-					default:
-						break;
 				}
 			}
 		});
@@ -115,11 +101,18 @@ public class LoginDialog extends JDialog {
 				dispose();
 			}
 		});
+		
+		txtFieldUsername.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent e){
+            		btnLogin.doClick();
+            }});
 	}
 
-	private CONNECTION_STATUS logIn(String username, String password) {
-		CONNECTION_STATUS result = CONNECTION_STATUS.CONNECTED;
+	private boolean logIn(String username, String password) {
+		boolean result = false;
 
+		cl.setLblLoginStatus(lblStatus);
 		result = cl.connect(username, password);
 
 		return result;

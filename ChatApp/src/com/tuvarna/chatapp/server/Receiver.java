@@ -16,20 +16,27 @@ public class Receiver extends Thread {
 		reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	}
 
-	// Йоана: Промених името на метода от process() на run(). Receiver наследява Thread,
+	// Йоана: Промених името на метода от process() на run(). Receiver наследява
+	// Thread,
 	// тогава run() ще почне да се изпълнява, когато се извика start() на обект
 	// от клас Receiver.
 	// public void process() {
 	public void run() {
 		try {
 			while (!isInterrupted()) {
-				String message = reader.readLine();
+				// Йоана: Keep-alive съобщението от сървъра на Наков ще ни
+				// трябва - добавям го:
+				try {
+					String message = reader.readLine();
 
-				if (message == null) {
-					break;
+					if (message == null) {
+						break;
+					}
+					
+					dispatcher.addMessage(user, message);
+				} catch (SocketTimeoutException ste) {
+					user.uSender.sendKeepAlive();
 				}
-
-				dispatcher.addMessage(user, message);
 			}
 		} catch (IOException e) {
 			System.out.println("Broken connection. Please reconnect");

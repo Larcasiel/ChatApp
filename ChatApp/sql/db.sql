@@ -8,6 +8,8 @@ CREATE TABLE ChatUser(
 		Password VARCHAR(30) NOT NULL,
 		Age INT NULL,
 		About VARCHAR(140) NULL,
+		Online TINYINT(1) NULL,
+		IPAddress VARCHAR(50) NULL,
 		PRIMARY KEY (Id)
 	) ENGINE=InnoDB;
 	
