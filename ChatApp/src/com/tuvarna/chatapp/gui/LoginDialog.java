@@ -136,7 +136,22 @@ public class LoginDialog extends JDialog {
 		txtFieldUsername.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				btnLogin.doClick();
+				if (txtFieldUsername.getText().trim().equals("") || new String(fieldPassword.getPassword()).equals("")) {
+					lblStatus.setText("Please fill in all information.");
+				} else {
+					btnLogin.doClick();
+				}
+			}
+		});
+
+		fieldPassword.addActionListener(new ActionListener() {
+
+			public void actionPerformed(ActionEvent e) {
+				if (txtFieldUsername.getText().trim().equals("") || new String(fieldPassword.getPassword()).equals("")) {
+					lblStatus.setText("Please fill in all information.");
+				} else {
+					btnLogin.doClick();
+				}
 			}
 		});
 	}

@@ -363,7 +363,9 @@ public class ChatClient {
 				mCA.removeAllUsers();
 
 				for (int i = 0; i < users.length; i++) {
-					mCA.addUser(users[i]);
+					if (!users[i].equals(username)) {
+						mCA.addUser(users[i]);
+					}
 				}
 			} else if (operation.equals("receiveMessage")) {
 				String text = "[" + parsedMessage.get("time") + "] " + parsedMessage.get("sender") + " says: "

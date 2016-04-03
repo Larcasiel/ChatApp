@@ -58,21 +58,22 @@ VALUES ("Petko77", "password", 22, "Some info."),
 	   ("User3", "parola", 13, "More info.");
 	  
 INSERT INTO Chat (Title)
-VALUES (NULL),
+VALUES ("Group Chat - All"),
 	   ("Group Chat Between 3 Users."),
 	   (NULL);
 
 INSERT INTO UserInChat (ChatId, UserId)
 VALUES (1, 1),
 	   (1, 2),
+	   (1, 3),
 	   (2, 1),
 	   (2, 2),
 	   (2, 3),
 	   (3, 2),
 	   (3, 3);
 
-INSERT INTO ChatMessage (SenderId, ChatId, MessageTime, Message)
-VALUES (1, 1, NOW(), "Hello, AnotherUser!"),
-	   (2, 1, NOW(), "Hi, Petko77."),
-	   (3, 2, NOW(), "Hello, everyone!"),
-	   (3, 3, NOW(), "Message from User3.");
+--INSERT INTO ChatMessage (SenderId, ChatId, MessageTime, Message)
+--VALUES (1, 1, NOW(), "Hello, AnotherUser!"),
+--	   (2, 1, NOW(), "Hi, Petko77."),
+--	   (3, 2, NOW(), "Hello, everyone!"),
+--	   (3, 3, NOW(), "Message from User3.");

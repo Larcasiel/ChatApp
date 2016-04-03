@@ -156,6 +156,8 @@ public class Dispatcher extends Thread {
 		HashMap<String, String> parsedMessage = new JSONDeserializer<HashMap<String, String>>().deserialize(message);
 
 		String operation = parsedMessage.get("operation");
+		
+		JSONSerializer serializer = new JSONSerializer();
 
 		if (operation.equals("logInRequest")) {
 			String username = parsedMessage.get("username");
@@ -197,6 +199,8 @@ public class Dispatcher extends Thread {
 
 					if (currentIP.equals(ipAddress) && (currentPort.equals(port))) {
 						user.username = username;
+
+						break;
 					}
 				}
 
@@ -208,8 +212,6 @@ public class Dispatcher extends Thread {
 				break;
 			}
 
-			JSONSerializer serializer = new JSONSerializer();
-
 			addMessage(null, serializer.serialize(loginOperationMsg).toString());
 		} else if (operation.equals("logOutRequest")) {
 			String username = parsedMessage.get("username");
@@ -219,7 +221,7 @@ public class Dispatcher extends Thread {
 		} else if (operation.equals("registerRequest")) {
 			String username = parsedMessage.get("username");
 			String password = parsedMessage.get("password");
-			
+
 			String ipAddress = parsedMessage.get("ipAddress");
 			String port = parsedMessage.get("port");
 
@@ -228,35 +230,43 @@ public class Dispatcher extends Thread {
 			registerOperationMsg.put("operation", "registerResponse");
 
 			switch (db.register(username, password)) {
-				case DB_PROBLEMS:
-					registerOperationMsg.put("success", "false");
-					registerOperationMsg.put("statusMessage", "DB problems, try again later.");
-					removeDeadUsers(ipAddress, port);
-					break;
-				case REGISTER_SUCCESS:
-					registerOperationMsg.put("success", "true");
-					registerOperationMsg.put("statusMessage", "Success");
-					break;
-				case USER_ALREADY_EXISTS:
-					registerOperationMsg.put("success", "false");
-					registerOperationMsg.put("statusMessage", "User with same username already exists.");
-					removeDeadUsers(ipAddress, port);
-					break;
-				default:
-					registerOperationMsg.put("success", "false");
-					registerOperationMsg.put("statusMessage", "Unknown error.");
-					removeDeadUsers(ipAddress, port);
-					break;
+			case DB_PROBLEMS:
+				registerOperationMsg.put("success", "false");
+				registerOperationMsg.put("statusMessage", "DB problems, try again later.");
+				removeDeadUsers(ipAddress, port);
+				break;
+			case REGISTER_SUCCESS:
+				registerOperationMsg.put("success", "true");
+				registerOperationMsg.put("statusMessage", "Success");
+				break;
+			case USER_ALREADY_EXISTS:
+				registerOperationMsg.put("success", "false");
+				registerOperationMsg.put("statusMessage", "User with same username already exists.");
+				removeDeadUsers(ipAddress, port);
+				break;
+			default:
+				registerOperationMsg.put("success", "false");
+				registerOperationMsg.put("statusMessage", "Unknown error.");
+				removeDeadUsers(ipAddress, port);
+				break;
 
 			}
-
-			JSONSerializer serializer = new JSONSerializer();
 
 			addMessage(null, serializer.serialize(registerOperationMsg).toString());
 		} else if (operation.equals("onlineUsersRequest")) {
 			notifyClientsForUserChange();
-		} else { // if (operation.equals("sendMessage")) {
-			sendToAll(message);
+		} else {// if (operation.equals("receiveMessage")) {
+			if (operation.equals("sendMessage")) {
+				String sender = parsedMessage.get("sender");
+				
+				if (sender != null) {
+					db.logChatMessage(sender, 1, parsedMessage.get("message"));
+				}
+				
+				parsedMessage.replace("operation", "receiveMessage");
+			}
+			
+			sendToAll(serializer.serialize(parsedMessage).toString());
 		}
 	}
 
@@ -264,7 +274,7 @@ public class Dispatcher extends Thread {
 	public void setDb(DatabaseInteraction db) {
 		Dispatcher.db = db;
 	}
-	
+
 	private void removeDeadUsers(String ipAddress, String port) {
 		for (int i = 0; i < users.size(); i++) {
 			User user = (User) users.get(i);
@@ -286,6 +296,8 @@ public class Dispatcher extends Thread {
 						users.remove(user);
 					}
 				}).start();
+
+				break;
 			}
 		}
 	}

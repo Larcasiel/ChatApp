@@ -254,7 +254,7 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
 		Date now = new Date();
 		String date = sdf.format(now);
 
-		operationMsg.put("operation", "receiveMessage");
+		operationMsg.put("operation", "sendMessage");
 		operationMsg.put("message", aMessage);
 		operationMsg.put("sender", cl.getUsername());
 		operationMsg.put("time", date);

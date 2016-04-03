@@ -58,9 +58,9 @@ public class DatabaseInteraction {
 				preparedStmt.setString(2, ipAddress);
 				preparedStmt.setString(3, username);
 
-				int rowsAffected = preparedStmt.executeUpdate();
+				preparedStmt.executeUpdate();
 
-				System.out.println(rowsAffected + " rows affected.");
+				System.out.println("Updated user status: " + username + " to " + online);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -83,9 +83,9 @@ public class DatabaseInteraction {
 				preparedStmt.setString(2, ipAddress);
 				preparedStmt.setString(3, username);
 
-				int rowsAffected = preparedStmt.executeUpdate();
+				preparedStmt.executeUpdate();
 
-				System.out.println(rowsAffected + " rows affected.");
+				System.out.println("Updated user status: " + username + " to " + online);
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -99,6 +99,7 @@ public class DatabaseInteraction {
 
 			PreparedStatement preparedStmtUserExists = null;
 			PreparedStatement preparedStmtRegister = null;
+			PreparedStatement preparedStmtAddToGroupChat = null;
 			ResultSet resultSetUserExists = null;
 
 			try {
@@ -119,10 +120,18 @@ public class DatabaseInteraction {
 					preparedStmtRegister.setString(1, username);
 					preparedStmtRegister.setString(2, password);
 					
-					int rowsAffected = preparedStmtRegister.executeUpdate();
+					int registeredResult = preparedStmtRegister.executeUpdate();
 
-					if (rowsAffected > 0) {
-						result = REGISTER_STATUS.REGISTER_SUCCESS;
+					if (registeredResult > 0) {
+						preparedStmtAddToGroupChat = conn.prepareStatement(Globals.REGISTER_IN_GROUP_CHAT);
+						preparedStmtAddToGroupChat.setInt(1, 1);
+						preparedStmtAddToGroupChat.setString(2, username);
+						
+						int chatResult = preparedStmtAddToGroupChat.executeUpdate();
+
+						if (chatResult > 0) {
+							result = REGISTER_STATUS.REGISTER_SUCCESS;
+						}
 					}
 				}
 			} catch (SQLException e1) {
@@ -136,7 +145,11 @@ public class DatabaseInteraction {
 					if (preparedStmtRegister != null) {
 						preparedStmtRegister.close();
 					}
-
+					
+					if (preparedStmtAddToGroupChat != null) {
+						preparedStmtAddToGroupChat.close();
+					}
+					
 					if (resultSetUserExists != null) {
 						resultSetUserExists.close();
 					}
@@ -226,7 +239,7 @@ public class DatabaseInteraction {
 		return result;
 	}
 
-	public void addNewMessage(int senderId, int chatId, String message) {
+	public void logChatMessage(String username, int chatId, String message) {
 		connect();
 
 		Date dt = new Date();
@@ -236,7 +249,7 @@ public class DatabaseInteraction {
 
 		try {
 			preparedStmt = conn.prepareStatement(Globals.ADD_NEW_MESSAGE);
-			preparedStmt.setInt(1, senderId);
+			preparedStmt.setString(1, username);
 			preparedStmt.setInt(2, chatId);
 			preparedStmt.setString(3, sdf.format(dt));
 			preparedStmt.setString(4, message);

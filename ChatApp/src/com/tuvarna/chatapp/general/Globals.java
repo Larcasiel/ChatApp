@@ -9,10 +9,11 @@ public class Globals {
 	public static final String DB_PASSWORD = "chatapppass";
 	
 	public static final String GET_ALL_MESASGES = "SELECT Message FROM ChatMessage;";
-	public static final String ADD_NEW_MESSAGE = "INSERT INTO ChatMessage(SenderId, ChatId, MessageTime, Message) VALUES(?, ?, ?, ?);";
+	public static final String ADD_NEW_MESSAGE = "INSERT INTO ChatMessage(SenderId, ChatId, MessageTime, Message) VALUES((SELECT Id FROM ChatUser WHERE Username = ? LIMIT 1), ?, ?, ?);";
 	public static final String UPDATE_USER_STATUS = "UPDATE ChatUser SET Online = ?, IPAddress = ? WHERE Username = ?";
 	public static final String REGISTER_USER = "INSERT INTO ChatUser (Username, Password) VALUES (?, ?);";
 	public static final String USER_EXISTS = "SELECT COUNT(*) FROM ChatUser WHERE Username = ?;";
+	public static final String REGISTER_IN_GROUP_CHAT = "INSERT INTO UserInChat (ChatId, UserId) VALUES (?, (SELECT Id FROM ChatUser WHERE Username = ? LIMIT 1));";
 	
 	public static String getAllMessagesFromChat(int chatId){
 		return "SELECT a.MessageTime, a.Message, b.Username FROM ChatMessage AS a, ChatUser AS b " +
