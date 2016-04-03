@@ -27,7 +27,15 @@ public class LoginDialog extends JDialog {
 	public LoginDialog() {
 		this(null, true, null);
 	}
+	
+	public void setUsername(String username) {
+		txtFieldUsername.setText(username);
+	}
 
+	public void setPassword(String password) {
+		fieldPassword.setText(password);
+	}
+	
 	public static void main(String[] args) {
 		try {
 			LoginDialog dialog = new LoginDialog();
@@ -59,7 +67,15 @@ public class LoginDialog extends JDialog {
 
 		JPanel p2 = new JPanel();
 		p2.add(btnLogin);
+		btnRegister.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				RegisterDialog registerDialog = new RegisterDialog(parent, true, cl);
+				registerDialog.setVisible(true);
 
+				setVisible(false);
+				dispose();
+			}
+		});
 		p2.add(btnRegister);
 		p2.add(btnCancel);
 
@@ -86,11 +102,26 @@ public class LoginDialog extends JDialog {
 		btnLogin.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (logIn(txtFieldUsername.getText(), new String(fieldPassword.getPassword()))) {
-						parent.setVisible(true);
-						setVisible(false);
-						dispose();
-				}
+				lblStatus.setText("Processing request, please wait...");
+
+				(new Thread() {
+					public void run() {
+						btnLogin.setEnabled(false);
+						btnRegister.setEnabled(false);
+						
+						boolean login = logIn(txtFieldUsername.getText(), new String(fieldPassword.getPassword()));
+						
+						btnLogin.setEnabled(true);
+						btnRegister.setEnabled(true);
+						
+						if (login) {
+							parent.setVisible(true);
+							setVisible(false);
+							dispose();
+						}
+					}
+				}).start();
+
 			}
 		});
 
@@ -101,19 +132,20 @@ public class LoginDialog extends JDialog {
 				dispose();
 			}
 		});
-		
-		txtFieldUsername.addActionListener(new ActionListener(){
 
-            public void actionPerformed(ActionEvent e){
-            		btnLogin.doClick();
-            }});
+		txtFieldUsername.addActionListener(new ActionListener() {
+
+			public void actionPerformed(ActionEvent e) {
+				btnLogin.doClick();
+			}
+		});
 	}
 
 	private boolean logIn(String username, String password) {
 		boolean result = false;
 
 		cl.setLblLoginStatus(lblStatus);
-		result = cl.connect(username, password);
+		result = cl.connect(username, password, true);
 
 		return result;
 	}

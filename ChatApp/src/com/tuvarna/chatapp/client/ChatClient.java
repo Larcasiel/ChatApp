@@ -24,9 +24,10 @@ public class ChatClient {
 	private PrintWriter out = null;
 	private GUI m_gui;
 	private GUI2 m_gui2;
-	
-	//Йоана: Label на LoginDialog:
+
+	// Йоана: Label на LoginDialog и RegisterDialog:
 	private JLabel lblLoginStatus;
+	private JLabel lblRegisterStatus;
 
 	// Йоана: Вече имаме Socket m_Socket, няма нужда от още един:
 	// private static Socket socket;
@@ -86,11 +87,11 @@ public class ChatClient {
 		return in;
 	}
 
-	public boolean connect(String username, String password) {
+	public boolean connect(String username, String password, boolean logIn) {
 		boolean result = false;
 
 		// Йоана: Ще използваме SERVER_HOSTNAME вместо тази променлива:
-		//String serverHost = (m_gui.getCodeBase()).getHost();
+		// String serverHost = (m_gui.getCodeBase()).getHost();
 
 		// Йоана: Тук виждам разни съобщения, свързани с аплети. Тъй като няма
 		// да ползваме аплети,
@@ -109,39 +110,45 @@ public class ChatClient {
 			m_Socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
 			in = new BufferedReader(new InputStreamReader(m_Socket.getInputStream()));
 			out = new PrintWriter(new OutputStreamWriter(m_Socket.getOutputStream()));
-			
-			if (logIn(username, password)) {
-				m_gui.addSystemMessage("Connected to server " + SERVER_HOSTNAME + ": " + SERVER_PORT + ".");
-				m_gui.setLoggedIn(true);
-				isLoggedIn = true;
-				
-				this.username = username;
-				
-				requestOnlineUsers();
-				
-				result = true;
+
+			if (logIn) {
+				if (logIn(username, password)) {
+					m_gui.addSystemMessage("Connected to server " + SERVER_HOSTNAME + ": " + SERVER_PORT + ".");
+					m_gui.setLoggedIn(true);
+					isLoggedIn = true;
+
+					this.username = username;
+
+					requestOnlineUsers();
+
+					result = true;
+				} else {
+					result = false;
+				}
 			} else {
-				result = false;
+				result = register(username, password);
 			}
 		} catch (SecurityException se) {
 			m_gui.addSystemMessage(
 					"Security policy does not allow " + "connection to " + SERVER_HOSTNAME + ": " + SERVER_PORT);
 			result = false;
-			
+
 			lblLoginStatus.setText("Security error.");
 		} catch (IOException e) {
 			// Йоана: Долната информация ще се появява в Login прозореца:
 			// m_gui.addSystemMessage("Can not establish connection to " +
 			// serverHost + ": " + SERVER_PORT);
 			result = false;
-			
+
 			lblLoginStatus.setText("Server is down. Try again later.");
 		}
 
-		// Create and start Listener thread
-		Listener listener = new Listener(m_gui, in);
-		listener.setDaemon(true);
-		listener.start();
+		if (logIn) {
+			// Create and start Listener thread
+			Listener listener = new Listener(m_gui, in);
+			listener.setDaemon(true);
+			listener.start();
+		}
 
 		return result;
 	}
@@ -156,8 +163,8 @@ public class ChatClient {
 		// m_gui.setConnected(false);
 
 		try {
-			//Йоана: logout logic
-			
+			// Йоана: logout logic
+
 			HashMap<String, String> operationMsg = new HashMap<String, String>();
 
 			operationMsg.put("operation", "logOutRequest");
@@ -165,10 +172,10 @@ public class ChatClient {
 			operationMsg.put("ipAddress", m_Socket.getInetAddress().toString());
 
 			JSONSerializer serializer = new JSONSerializer();
-			
+
 			out.println(serializer.serialize(operationMsg).toString());
 			out.flush();
-			
+
 			m_Socket.close();
 
 			// Йоана: Когато някой се разлогне, да не се запазва списъка с
@@ -196,10 +203,10 @@ public class ChatClient {
 		operationMsg.put("port", "" + m_Socket.getLocalPort());
 
 		JSONSerializer serializer = new JSONSerializer();
-		
+
 		out.println(serializer.serialize(operationMsg).toString());
 		out.flush();
-		
+
 		String message = "";
 
 		try {
@@ -228,16 +235,61 @@ public class ChatClient {
 
 		return result;
 	}
-	
+
 	public void requestOnlineUsers() {
 		HashMap<String, String> operationMsg = new HashMap<String, String>();
 
 		operationMsg.put("operation", "onlineUsersRequest");
-		
+
 		JSONSerializer serializer = new JSONSerializer();
-		
+
 		out.println(serializer.serialize(operationMsg).toString());
-		out.flush();		
+		out.flush();
+	}
+
+	public boolean register(String username, String password) {
+		boolean result = false;
+
+		HashMap<String, String> operationMsg = new HashMap<String, String>();
+
+		operationMsg.put("operation", "registerRequest");
+		operationMsg.put("username", username);
+		operationMsg.put("password", password);
+		operationMsg.put("ipAddress", m_Socket.getInetAddress().toString());
+		operationMsg.put("port", "" + m_Socket.getLocalPort());
+
+		JSONSerializer serializer = new JSONSerializer();
+
+		out.println(serializer.serialize(operationMsg).toString());
+		out.flush();
+
+		String message = "";
+
+		try {
+			while (true) {
+				message = in.readLine();
+
+				HashMap<String, String> parsedMessage = new JSONDeserializer<HashMap<String, String>>()
+						.deserialize(message);
+
+				String operation = parsedMessage.get("operation");
+
+				if (operation.equals("registerResponse")) {
+					if (parsedMessage.get("success").equals("true")) {
+						result = true;
+					} else {
+						lblRegisterStatus.setText(parsedMessage.get("statusMessage"));
+					}
+
+					break;
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 
 	public GUI2 getM_gui2() {
@@ -247,19 +299,27 @@ public class ChatClient {
 	public void setM_gui2(GUI2 m_gui2) {
 		this.m_gui2 = m_gui2;
 	}
-	
+
 	public JLabel getLblLoginStatus() {
 		return lblLoginStatus;
 	}
-	
+
 	public void setLblLoginStatus(JLabel lblLoginStatus) {
 		this.lblLoginStatus = lblLoginStatus;
+	}
+
+	public JLabel getLblRegisterStatus() {
+		return lblRegisterStatus;
+	}
+
+	public void setLblRegisterStatus(JLabel lblRegisterStatus) {
+		this.lblRegisterStatus = lblRegisterStatus;
 	}
 
 	public String getUsername() {
 		return this.username;
 	}
-	
+
 	class Listener extends Thread {
 		private BufferedReader mIn;
 		private GUI mCA;
@@ -277,10 +337,10 @@ public class ChatClient {
 					handleMessage(message);
 				}
 			} catch (Exception e) {
-				//Йоана: Тествам нещо, ще закоментирам малко неща:
+				// Йоана: Тествам нещо, ще закоментирам малко неща:
 				// e.printStackTrace();
-				//if (m_gui.getLoggedIn())
-				//	m_gui.addSystemMessage("Communication error.");
+				// if (m_gui.getLoggedIn())
+				// m_gui.addSystemMessage("Communication error.");
 			}
 			m_gui.setLoggedIn(false);
 			isLoggedIn = false;
@@ -319,6 +379,5 @@ public class ChatClient {
 			// mCA.addText(message, user);
 			// mCA.addUser(user);
 		}
-
 	}
 }

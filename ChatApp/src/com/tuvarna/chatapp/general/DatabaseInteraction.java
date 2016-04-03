@@ -34,7 +34,7 @@ public class DatabaseInteraction {
 
 			result = true;
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} finally {
 			if (conn == null) {
 				System.out.println("Can't establish a connection to the database.");
@@ -91,6 +91,70 @@ public class DatabaseInteraction {
 			}
 		}
 	}
+	
+	public REGISTER_STATUS register(String username, String password) {
+		REGISTER_STATUS result = REGISTER_STATUS.DB_PROBLEMS;
+		
+		if (connect()) {
+
+			PreparedStatement preparedStmtUserExists = null;
+			PreparedStatement preparedStmtRegister = null;
+			ResultSet resultSetUserExists = null;
+
+			try {
+				preparedStmtUserExists = conn.prepareStatement(Globals.USER_EXISTS);
+				preparedStmtUserExists.setString(1, username);
+				resultSetUserExists = preparedStmtUserExists.executeQuery();
+
+				int userExists = 0;
+
+				while (resultSetUserExists.next()) {
+					userExists = resultSetUserExists.getInt(1);
+				}
+
+				if (userExists > 0) {
+					result = REGISTER_STATUS.USER_ALREADY_EXISTS;
+				} else {
+					preparedStmtRegister = conn.prepareStatement(Globals.REGISTER_USER);
+					preparedStmtRegister.setString(1, username);
+					preparedStmtRegister.setString(2, password);
+					
+					int rowsAffected = preparedStmtRegister.executeUpdate();
+
+					if (rowsAffected > 0) {
+						result = REGISTER_STATUS.REGISTER_SUCCESS;
+					}
+				}
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			} finally {
+				try {
+					if (preparedStmtUserExists != null) {
+						preparedStmtUserExists.close();
+					}
+					
+					if (preparedStmtRegister != null) {
+						preparedStmtRegister.close();
+					}
+
+					if (resultSetUserExists != null) {
+						resultSetUserExists.close();
+					}
+
+					if (conn != null) {
+						conn.close();
+						conn = null;
+					}
+				} catch (SQLException e2) {
+					e2.printStackTrace();
+				}
+			}
+		} else {
+			result = REGISTER_STATUS.DB_PROBLEMS;
+		}
+
+		return result;
+	}
 
 	public LOGIN_STATUS logIn(String username, String password, String ipAddress) {
 		LOGIN_STATUS result = LOGIN_STATUS.DB_PROBLEMS;
@@ -123,7 +187,7 @@ public class DatabaseInteraction {
 					}
 
 					if (count > 0) {
-						result = LOGIN_STATUS.SUCCESS;
+						result = LOGIN_STATUS.LOGIN_SUCCESS;
 
 						updateUserStatus(username, ipAddress, 1);
 

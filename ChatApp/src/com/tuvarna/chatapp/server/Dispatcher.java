@@ -1,9 +1,8 @@
 package com.tuvarna.chatapp.server;
 
-import java.io.IOException;
 import java.util.*;
 
-import com.tuvarna.chatapp.general.*;
+import com.tuvarna.chatapp.general.DatabaseInteraction;
 
 import flexjson.*;
 
@@ -173,40 +172,19 @@ public class Dispatcher extends Thread {
 			case ALREADY_LOGGED:
 				loginOperationMsg.put("success", "false");
 				loginOperationMsg.put("statusMessage", "Already logged in from this computer.");
-
+				removeDeadUsers(ipAddress, port);
 				break;
 			case DB_PROBLEMS:
 				loginOperationMsg.put("success", "false");
 				loginOperationMsg.put("statusMessage", "DB problems, try again later.");
+				removeDeadUsers(ipAddress, port);
 				break;
 			case INVALID_USER_OR_PASS:
 				loginOperationMsg.put("success", "false");
 				loginOperationMsg.put("statusMessage", "Invalid username or password.");
-
-				for (int i = 0; i < users.size(); i++) {
-					User user = (User) users.get(i);
-
-					String currentIP = user.uSocket.getInetAddress().toString();
-					currentIP = "localhost" + currentIP;
-					String currentPort = "" + user.uSocket.getPort();
-
-					if (currentIP.equals(ipAddress) && (currentPort.equals(port))) {
-						(new Thread() {
-							public void run() {
-								try {
-									Thread.sleep(1000);
-								} catch (InterruptedException e1) {
-									// TODO Auto-generated catch block
-									e1.printStackTrace();
-								}
-
-								users.remove(user);
-							}
-						}).start();
-					}
-				}
+				removeDeadUsers(ipAddress, port);
 				break;
-			case SUCCESS:
+			case LOGIN_SUCCESS:
 				loginOperationMsg.put("success", "true");
 				loginOperationMsg.put("statusMessage", "Success");
 
@@ -226,6 +204,7 @@ public class Dispatcher extends Thread {
 			default:
 				loginOperationMsg.put("success", "false");
 				loginOperationMsg.put("statusMessage", "Unknown error.");
+				removeDeadUsers(ipAddress, port);
 				break;
 			}
 
@@ -237,6 +216,43 @@ public class Dispatcher extends Thread {
 			String ipAddress = parsedMessage.get("ipAddress");
 
 			db.updateUserStatus(username, ipAddress, 0);
+		} else if (operation.equals("registerRequest")) {
+			String username = parsedMessage.get("username");
+			String password = parsedMessage.get("password");
+			
+			String ipAddress = parsedMessage.get("ipAddress");
+			String port = parsedMessage.get("port");
+
+			HashMap<String, String> registerOperationMsg = new HashMap<String, String>();
+
+			registerOperationMsg.put("operation", "registerResponse");
+
+			switch (db.register(username, password)) {
+				case DB_PROBLEMS:
+					registerOperationMsg.put("success", "false");
+					registerOperationMsg.put("statusMessage", "DB problems, try again later.");
+					removeDeadUsers(ipAddress, port);
+					break;
+				case REGISTER_SUCCESS:
+					registerOperationMsg.put("success", "true");
+					registerOperationMsg.put("statusMessage", "Success");
+					break;
+				case USER_ALREADY_EXISTS:
+					registerOperationMsg.put("success", "false");
+					registerOperationMsg.put("statusMessage", "User with same username already exists.");
+					removeDeadUsers(ipAddress, port);
+					break;
+				default:
+					registerOperationMsg.put("success", "false");
+					registerOperationMsg.put("statusMessage", "Unknown error.");
+					removeDeadUsers(ipAddress, port);
+					break;
+
+			}
+
+			JSONSerializer serializer = new JSONSerializer();
+
+			addMessage(null, serializer.serialize(registerOperationMsg).toString());
 		} else if (operation.equals("onlineUsersRequest")) {
 			notifyClientsForUserChange();
 		} else { // if (operation.equals("sendMessage")) {
@@ -247,5 +263,30 @@ public class Dispatcher extends Thread {
 	// …Ó‡Ì‡: Setter Á‡ db:
 	public void setDb(DatabaseInteraction db) {
 		Dispatcher.db = db;
+	}
+	
+	private void removeDeadUsers(String ipAddress, String port) {
+		for (int i = 0; i < users.size(); i++) {
+			User user = (User) users.get(i);
+
+			String currentIP = user.uSocket.getInetAddress().toString();
+			currentIP = "localhost" + currentIP;
+			String currentPort = "" + user.uSocket.getPort();
+
+			if (currentIP.equals(ipAddress) && (currentPort.equals(port))) {
+				(new Thread() {
+					public void run() {
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+
+						users.remove(user);
+					}
+				}).start();
+			}
+		}
 	}
 }
